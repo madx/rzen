@@ -1,0 +1,29 @@
+== About
+
+RZen is a light zenity frontend in pure ruby. It allows you to display or 
+get information from the user with nice GTK+ dialogs. 
+
+It features a more ruby-ish syntax than using raw bash commands 
+and allows you to store dialog templates in variables.
+
+== Usage
+
+Here's a short sample of what you can do with RZen
+
+  require 'rubygems'
+  require 'rzen'
+  
+  login = RZen::Entry.get(:title => 'Login',
+                          :text =>  'Enter your login please')
+  
+  password = RZen::Entry.get(:title => "Password", 
+                             :text => 'Enter your password please',
+                             :hide_text => true)
+                         
+  birthdate = RZen::Calendar.get(:title => 'Birthdate',
+                                 :text =>  "What's your birthdate ?")
+                                 
+  if password.length < 8
+    RZen::Error.show(:text => 'Your password is too short')
+  end
+     
