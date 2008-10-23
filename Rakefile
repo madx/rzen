@@ -6,7 +6,7 @@ require 'rake/gempackagetask'
 spec = Gem::Specification.new do |s|
   s.platform         = Gem::Platform::RUBY
   s.name             = "rzen"
-  s.version          = "1.1.0"
+  s.version          = "2.0.0"
   s.author           = "MadX"
   s.email            = "root+rzen@yapok.org"
   s.summary          = "A package to build Zenity dialogs in a ruby-ish way."
