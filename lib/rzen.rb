@@ -33,34 +33,28 @@ module RZen#:nodoc:
 
   # This is the default class, parent of all RZen dialogs. It includes
   # the common methods and attributes of RZen dialogs objects.
+  # You SHOULD NOT use this class. Anyways, it will crash.
   class Dialog
     attr_accessor :title, :width, :height, :window_icon
     
-    # Run the code needed to generate the box and returns the value
-    # returned by zenity
     def run
-      %x(#{commandline} #{options}).chomp
-    end
-    
-    # An "alias" to build a Dialog and run it in only one method
-    def self.get(a={})
-      self.new(a).run
+      %x(zenity --#{command} #{options}).chomp
     end
     
     def initialize(a={})
       a.each do |k,v|
-        eval "@#{k} = #{v.inspect}"
+        instance_variable_set("@#{k}", v)
       end
     end
     
-    private
-    
-    # The base command used to generate the dialog.
-    def commandline
-      "zenity --info --text "+
-      "\"Please do not use the Dialog class,"+
-      " use one of its subclasses.\""
+    class << self
+      def get(a={})
+        new(a).run
+      end
+      alias_method :show, :get
     end
+    
+    private
     
     # Builds the options line from attributes
     def options
@@ -74,50 +68,49 @@ module RZen#:nodoc:
       end
       options
     end
+
+    def command
+      self.class.to_s.gsub(/^rzen::/i,'').gsub(/([A-Z])/, '-\1').downcase
+    end
     
   end
 
   class Entry < Dialog
     attr_accessor :text, :entry_text, :hide_text
-    def commandline; "zenity --entry" end
   end
   
   class Calendar < Dialog
     attr_accessor :text, :day, :month, :year, :date_format
-    def commandline;  "zenity --calendar" end
   end
   
   class Message < Dialog
     attr_accessor :text, :no_wrap
-    # An alias to the get method, better for language coherence
-    def self.show(a={}); self.get(a) end
-    # Overrides the default run method to return nil
-    def run; super; nil end
+    def run 
+      super
+      nil 
+    end
   end
   
-  class Error < Message;   def commandline; "zenity --error"   end end
-  class Info < Message;    def commandline; "zenity --info"    end end
-  class Warning < Message; def commandline; "zenity --warning" end end
-  
+  class Error   < Message; end
+  class Info    < Message; end
+  class Warning < Message; end
+
   class Question < Message
-    def commandline; "zenity --question" end
-    
     # Overrides the default run method to return the exit code (true/false)
-    # instead of a return value.
+    # instead of a return value
     def run
-      system("#{commandline} #{options}")
+      system("zenity --#{command} #{options}")
     end
   end
   
   class FileSelection < Dialog
     attr_accessor :filename, :multiple, :directory, :save, :separator, :confirm_overwrite
-    def commandline; "zenity --file-selection" end
     
-     # Overrides the default run method to return an array instead of a string
+    # Overrides the default run method to return an array instead of a string
     def run
       if(@multiple)
         @separator ||= '|'
-        %x(#{commandline} #{options}).chomp.split(@separator)
+        %x(zenity --#{command} #{options}).chomp.split(@separator)
       else
         super
       end
@@ -126,15 +119,11 @@ module RZen#:nodoc:
   
   class Notification < Dialog
     attr_accessor :text, :listen
-    def commandline; "zenity --notification" end
-    # An alias to the get method, better for language coherence
-    def self.show(a={}); self.get(a) end
   end
   
   class List < Dialog
     attr_accessor :columns, :editable, :separator, :print_column, :hide_column, 
                   :items
-    def commandline; "zenity --list" end
     
     # Overrides the default option method to use the @items attribute.
     def options
@@ -157,7 +146,6 @@ module RZen#:nodoc:
   end
   
   class CheckList < List
-    def commandline; "zenity --list --checklist" end
     
     def initialize(a={})
       a[:columns] = [''] + a[:columns]
@@ -174,7 +162,6 @@ module RZen#:nodoc:
   end
   
   class RadioList < List
-    def commandline; "zenity --list --radiolist" end
     
     def initialize(a={})
       a[:columns] = [''] + a[:columns]
@@ -188,7 +175,6 @@ module RZen#:nodoc:
   class Scale < Dialog
     attr_accessor :text, :value, :min_value, :max_value, :step, 
                   :print_partial, :hide_value
-    def commandline; "zenity --scale" end
     
     # Overrides the default run method to return an integer instead of a string
     def run
