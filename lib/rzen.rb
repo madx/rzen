@@ -21,14 +21,6 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
-class String
-  # Returns a new String with the first character removed. 
-  # Applying lchop to an empty string returns an empty string. 
-  def lchop
-    self.reverse.chop.reverse
-  end
-end
-
 module RZen#:nodoc:
 
   # This is the default class, parent of all RZen dialogs. It includes
@@ -61,9 +53,9 @@ module RZen#:nodoc:
       options = ''
       instance_variables.each do |a|
         if eval(a).is_a?(TrueClass)
-          options += "--#{a.gsub('_', '-').lchop} "
+          options += "--#{a.gsub('_', '-').[0..-2]} "
         else
-          options += "--#{a.gsub('_', '-').lchop} #{eval(a).inspect} "
+          options += "--#{a.gsub('_', '-').[0..-2]} #{eval(a).inspect} "
         end
       end
       options
@@ -96,8 +88,6 @@ module RZen#:nodoc:
   class Warning < Message; end
 
   class Question < Message
-    # Overrides the default run method to return the exit code (true/false)
-    # instead of a return value
     def run
       system("zenity --#{command} #{options}")
     end
@@ -107,7 +97,6 @@ module RZen#:nodoc:
     attr_accessor :filename, :multiple, :directory, :save, :separator, 
                   :confirm_overwrite
     
-    # Overrides the default run method to return an array instead of a string
     def run
       if(@multiple)
         @separator ||= '|'
@@ -126,13 +115,12 @@ module RZen#:nodoc:
     attr_accessor :columns, :editable, :separator, :print_column, 
                   :hide_column, :items
     
-    # Overrides the default option method to use the @items attribute.
     def options
       options = ''
       instance_variables.each do |a|
         next if a == "@items"
         if eval(a).is_a?(TrueClass)
-          options += "--#{a.gsub('_', '-').lchop} "
+          options += "--#{a.gsub('_', '-').[0..-2]} "
         elsif a == "@columns"
           eval(a).each do |val|
             options += "--column #{val.inspect} "
@@ -159,9 +147,7 @@ module RZen#:nodoc:
     end
     
     alias_method :orig_run, :run
-    def run
-      orig_run.split('|')
-    end
+    def run; orig_run.split('|') end
   end
   
   class RadioList < List
@@ -180,9 +166,7 @@ module RZen#:nodoc:
                   :print_partial, :hide_value
     
     alias_method :orig_run, :run
-    def run
-      orig_run.to_i
-    end
+    def run; orig_run.to_i end
   end
 
 end
