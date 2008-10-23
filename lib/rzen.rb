@@ -30,11 +30,15 @@ module RZen#:nodoc:
     attr_accessor :title, :width, :height, :window_icon
     
     def run
-      %x(zenity --#{command} #{options}).chomp
+      p commandline
+      %x(#{commandline}).chomp
     end
-    
-    def initialize(a={})
-      a.each do |k,v|
+    alias_method :show,     :run
+    alias_method :get,      :run
+    alias_method :orig_run, :run
+
+    def initialize(opts={})
+      opts.each do |k,v|
         instance_variable_set("@#{k}", v)
       end
     end
@@ -48,21 +52,26 @@ module RZen#:nodoc:
     
     private
     
-    # Builds the options line from attributes
-    def options
+    # Build the options line from attributes
+    def build_options
       options = ''
-      instance_variables.each do |a|
-        if eval(a).is_a?(TrueClass)
-          options += "--#{a.gsub('_', '-').[0..-2]} "
+      instance_variables.each do |opt|
+        value = instance_variable_get(opt)
+        if value.is_a?(TrueClass)
+          options += "--#{opt.gsub('_', '-')[1..-1]} "
         else
-          options += "--#{a.gsub('_', '-').[0..-2]} #{eval(a).inspect} "
+          options += "--#{opt.gsub('_', '-')[1..-1]} #{value.inspect} "
         end
       end
       options
     end
 
-    def command
+    def dialog_type
       self.class.to_s.gsub(/^rzen::/i,'').gsub(/([A-Z])/, '-\1').downcase
+    end
+
+    def commandline
+      "zenity --#{dialog_type} #{build_options}"
     end
     
   end
@@ -77,10 +86,7 @@ module RZen#:nodoc:
   
   class Message < Dialog
     attr_accessor :text, :no_wrap
-    def run 
-      super
-      nil 
-    end
+    def run; super; nil end
   end
   
   class Error   < Message; end
@@ -88,9 +94,7 @@ module RZen#:nodoc:
   class Warning < Message; end
 
   class Question < Message
-    def run
-      system("zenity --#{command} #{options}")
-    end
+    def run; system(commandline) end
   end
   
   class FileSelection < Dialog
@@ -98,12 +102,8 @@ module RZen#:nodoc:
                   :confirm_overwrite
     
     def run
-      if(@multiple)
-        @separator ||= '|'
-        %x(zenity --#{command} #{options}).chomp.split(@separator)
-      else
-        super
-      end
+      @separator ||= '|'
+      if @multiple then orig_run.split(@separator) else super end
     end
   end
   
@@ -115,18 +115,18 @@ module RZen#:nodoc:
     attr_accessor :columns, :editable, :separator, :print_column, 
                   :hide_column, :items
     
-    def options
+    def build_options
       options = ''
       instance_variables.each do |a|
         next if a == "@items"
         if eval(a).is_a?(TrueClass)
-          options += "--#{a.gsub('_', '-').[0..-2]} "
+          options += "--#{a.gsub('_', '-')[0..-2]} "
         elsif a == "@columns"
           eval(a).each do |val|
             options += "--column #{val.inspect} "
           end
         else
-          options += "--#{a.gsub('_', '-').lchop} #{eval(a).inspect} "
+          options += "--#{a.gsub('_', '-')[0..-2]} #{eval(a).inspect} "
         end
       end 
       unless @items.nil?
@@ -146,7 +146,6 @@ module RZen#:nodoc:
       super
     end
     
-    alias_method :orig_run, :run
     def run; orig_run.split('|') end
   end
   
@@ -165,7 +164,6 @@ module RZen#:nodoc:
     attr_accessor :text, :value, :min_value, :max_value, :step, 
                   :print_partial, :hide_value
     
-    alias_method :orig_run, :run
     def run; orig_run.to_i end
   end
 
