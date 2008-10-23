@@ -104,7 +104,8 @@ module RZen#:nodoc:
   end
   
   class FileSelection < Dialog
-    attr_accessor :filename, :multiple, :directory, :save, :separator, :confirm_overwrite
+    attr_accessor :filename, :multiple, :directory, :save, :separator, 
+                  :confirm_overwrite
     
     # Overrides the default run method to return an array instead of a string
     def run
@@ -122,8 +123,8 @@ module RZen#:nodoc:
   end
   
   class List < Dialog
-    attr_accessor :columns, :editable, :separator, :print_column, :hide_column, 
-                  :items
+    attr_accessor :columns, :editable, :separator, :print_column, 
+                  :hide_column, :items
     
     # Overrides the default option method to use the @items attribute.
     def options
@@ -139,8 +140,10 @@ module RZen#:nodoc:
         else
           options += "--#{a.gsub('_', '-').lchop} #{eval(a).inspect} "
         end
+      end 
+      unless @items.nil?
+        options += @items.flatten.collect{|i| i.inspect}.join(' ')
       end
-      options += @items.flatten.collect{|i| i.inspect}.join(' ') unless @items.nil?
       options
     end
   end
@@ -155,9 +158,9 @@ module RZen#:nodoc:
       super
     end
     
-    # Overrides the default run method to return an array instead of a string
+    alias_method :orig_run, :run
     def run
-      %x(#{commandline} #{options}).chomp.split('|')
+      orig_run.split('|')
     end
   end
   
@@ -176,9 +179,9 @@ module RZen#:nodoc:
     attr_accessor :text, :value, :min_value, :max_value, :step, 
                   :print_partial, :hide_value
     
-    # Overrides the default run method to return an integer instead of a string
+    alias_method :orig_run, :run
     def run
-      %x(#{commandline} #{options}).chomp.to_i
+      orig_run.to_i
     end
   end
 
