@@ -33,9 +33,11 @@ module RZen#:nodoc:
       p commandline
       %x(#{commandline}).chomp
     end
+
     alias_method :show,     :run
     alias_method :get,      :run
     alias_method :orig_run, :run
+    private :orig_run
 
     def initialize(opts={})
       opts.each do |k,v|
@@ -52,7 +54,6 @@ module RZen#:nodoc:
     
     private
     
-    # Build the options line from attributes
     def build_options
       options = ''
       instance_variables.each do |opt|
