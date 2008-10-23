@@ -30,7 +30,6 @@ module RZen#:nodoc:
     attr_accessor :title, :width, :height, :window_icon
     
     def run
-      p commandline
       %x(#{commandline}).chomp
     end
 
@@ -118,16 +117,17 @@ module RZen#:nodoc:
     
     def build_options
       options = ''
-      instance_variables.each do |a|
-        next if a == "@items"
-        if eval(a).is_a?(TrueClass)
-          options += "--#{a.gsub('_', '-')[0..-2]} "
-        elsif a == "@columns"
-          eval(a).each do |val|
+      instance_variables.each do |opt|
+        value = instance_variable_get opt
+        next if opt == "@items"
+        if value.is_a?(TrueClass)
+          options += "--#{opt.gsub('_', '-')[1..-1]} "
+        elsif opt == "@columns"
+          value.each do |val|
             options += "--column #{val.inspect} "
           end
         else
-          options += "--#{a.gsub('_', '-')[0..-2]} #{eval(a).inspect} "
+          options += "--#{opt.gsub('_', '-')[1..-1]} #{value.inspect} "
         end
       end 
       unless @items.nil?
@@ -137,30 +137,23 @@ module RZen#:nodoc:
     end
   end
   
-  class CheckList < List
     
-    def initialize(a={})
-      a[:columns] = [''] + a[:columns]
-      a[:items].map! {|arr|
-        arr = [''] + arr
-      }
+  class Radiolist < List
+    def initialize(opts={})
+      opts[:list]    = true
+      opts[:columns] = [''] + opts[:columns]
+      opts[:items].map! {|item| item = ['', [item]].flatten }
       super
-    end
-    
-    def run; orig_run.split('|') end
+    end  
   end
-  
-  class RadioList < List
-    
-    def initialize(a={})
-      a[:columns] = [''] + a[:columns]
-      a[:items].map! {|arr|
-        arr = [''] + arr
-      }
-      super
+
+  class Checklist < Radiolist
+    def run
+      @separator ||= '|'
+      orig_run.split(@separator) 
     end
   end
-  
+
   class Scale < Dialog
     attr_accessor :text, :value, :min_value, :max_value, :step, 
                   :print_partial, :hide_value
